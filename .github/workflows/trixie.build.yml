@@ -14,6 +14,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup environment
+        run: |
+          echo "DATEFILE=`git log -1 --date=format:\"%Y_%m_%d_%H%M\" --format=\"%ad\"`" >> $GITHUB_ENV
+          echo "DATEVERSION=`git log -1 --date=format:\"%Y-%m-%d %H:%M\" --format=\"%ad\"`" >> $GITHUB_ENV
+          echo "CMAKE_BUILD_PARALLEL_LEVEL=`getconf _NPROCESSORS_ONLN 2>/dev/null || getconf NPROCESSORS_ONLN 2>/dev/null || echo 2`" >> $GITHUB_ENV
+
+      - name: Setup version info
+        run: |
+          sed -i "s/OPENXCOM_VERSION_GIT \"[^\"]*\"/OPENXCOM_VERSION_GIT \" git ${{ env.DATEVERSION }}\"/" src/version.h
+          echo "FILENAME=oxce_git_${{ env.DATEFILE }}" >> $GITHUB_ENV
+
       - name: Install packages
         run: |
           apt update
@@ -31,11 +42,19 @@ jobs:
       - name: Compile source code
         run: |
           set -x
-          cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
-            -DDEV_BUILD=OFF -DCPACK_GENERATOR=DEB -DOPENXCOM_TARGET=trixie \
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
+            -DDEV_BUILD=OFF -DCPACK_GENERATOR=DEB \
             -DCPACK_DEBIAN_PACKAGE_DEPENDS='libsdl1.2debian (>= 1.2.68-3), libsdl-mixer1.2 (>= 1.2.12-19), libsdl-image1.2 (>= 1.2.12-14), libsdl-gfx1.2-5 (>= 2.0.25-12), 	libc6 (>= 2.34)'
           make -j$(nproc)
-          make install DESTDIR=AppDir
+
+      - name: Package
+        run: |
+          set -x
           cpack -G DEB
-          rm -rf AppDir/usr/share/openxcom/UFO
-          rm -rf AppDir/usr/share/openxcom/TFTD
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: OXCE-8.5.2-trixie-amd64.deb
+          path: OpenXcom/Extended-8.5.2---unknown.deb
