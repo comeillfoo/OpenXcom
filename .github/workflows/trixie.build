@@ -1,0 +1,31 @@
+name: Trixie Build
+on:
+  push:
+    branches:
+      - feat-build-deb13-amd64
+jobs:
+  amd64:
+    name: Trixie Build (amd64)
+    runs-on: ubuntu-latest
+    container: debian:trixie-slim
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install packages
+        run: |
+          sudo apt update
+          sudo apt -yq --no-install-suggests --no-install-recommends \
+            install appstream libfuse2 libsdl1.2-dev build-essential \
+            ibboost-dev libyaml-cpp-dev xmlto libsdl-mixer1.2-dev \
+            libsdl-image1.2-dev libsdl-gfx1.2-dev
+
+      - name: Compile source code
+        run: |
+          cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCPACK_GENERATOR=DEB
+          make -j$(nproc)
+          make install DESTDIR=AppDir
+          rm -rf AppDir/usr/share/openxcom/UFO
+          rm -rf AppDir/usr/share/openxcom/TFTD
