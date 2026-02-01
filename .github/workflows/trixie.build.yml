@@ -51,6 +51,7 @@ jobs:
       - name: Package
         run: |
           set -x
+          cd build
           cpack -G DEB
 
       - name: Archive artifacts
