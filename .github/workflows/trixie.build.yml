@@ -31,8 +31,11 @@ jobs:
       - name: Compile source code
         run: |
           set -x
-          cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCPACK_GENERATOR=DEB
+          cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
+            -DDEV_BUILD=OFF -DCPACK_GENERATOR=DEB -DOPENXCOM_TARGET=trixie \
+            -DCPACK_DEBIAN_PACKAGE_DEPENDS='libsdl1.2debian (>= 1.2.68-3), libsdl-mixer1.2 (>= 1.2.12-19), libsdl-image1.2 (>= 1.2.12-14), libsdl-gfx1.2-5 (>= 2.0.25-12), 	libc6 (>= 2.34)'
           make -j$(nproc)
-          cpack -G DEB # make install DESTDIR=AppDir
+          make install DESTDIR=AppDir
+          cpack -G DEB
           rm -rf AppDir/usr/share/openxcom/UFO
           rm -rf AppDir/usr/share/openxcom/TFTD
